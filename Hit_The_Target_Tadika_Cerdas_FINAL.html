@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hit The Target — Tadika Cerdas</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at 20% 10%,#ffe66d,transparent 25%),linear-gradient(135deg,#172554,#312e81 55%,#7c3aed);color:#fff;min-height:100vh;overflow-x:hidden}
+.wrap{max-width:1100px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+h1{margin:0;font-size:clamp(25px,5vw,46px);text-shadow:0 4px 0 #111827}.sub{opacity:.9}.pill{background:#fff;color:#312e81;padding:9px 14px;border-radius:999px;font-weight:800}
+.board{display:grid;grid-template-columns:1fr 1.15fr;gap:20px;margin-top:18px}.card{background:rgba(255,255,255,.13);border:2px solid rgba(255,255,255,.22);backdrop-filter:blur(12px);border-radius:26px;padding:20px;box-shadow:0 18px 50px #0004}
+.scoreboard{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:15px}.team{padding:12px;border-radius:16px;background:#111827aa}.team b{display:block;font-size:14px}.team span{font-size:28px;font-weight:900}
+.dartwrap{display:flex;justify-content:center;align-items:center;min-height:420px;position:relative}.dart{width:min(390px,78vw);aspect-ratio:1;border-radius:50%;background:repeating-radial-gradient(circle,#fff 0 9%,#dc2626 9% 18%,#111827 18% 27%,#22c55e 27% 36%,#facc15 36% 45%,#dc2626 45% 54%,#111827 54% 63%,#22c55e 63% 72%,#facc15 72% 81%,#111827 81% 100%);border:12px solid #f8fafc;box-shadow:0 0 0 8px #f59e0b,0 20px 60px #0008;position:relative;animation:float 3s ease-in-out infinite}
+.dart:after{content:"";position:absolute;inset:47%;background:#ef4444;border-radius:50%;box-shadow:0 0 0 7px #111827}
+.needle{position:absolute;width:7px;height:145px;background:#e5e7eb;left:50%;top:50%;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(0deg);border-radius:9px;transition:.45s}
+.needle:after{content:"";position:absolute;bottom:-15px;left:50%;transform:translateX(-50%);border-left:12px solid transparent;border-right:12px solid transparent;border-top:25px solid #ef4444}
+.targets{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:15px}.target{border:0;border-radius:14px;padding:12px 4px;background:#f8fafc;color:#111827;font-weight:900;cursor:pointer;box-shadow:0 5px 0 #94a3b8;transition:.15s}.target:hover{transform:translateY(-3px)}.target.active{background:#facc15;box-shadow:0 5px 0 #ca8a04}
+.q{font-size:clamp(20px,3vw,30px);line-height:1.35;font-weight:800;margin:10px 0 18px}.difficulty{display:inline-block;padding:6px 11px;border-radius:999px;background:#facc15;color:#111827;font-weight:900}
+.answer{display:grid;gap:10px}.answer button,.mainbtn{border:0;border-radius:16px;padding:14px 16px;font-size:17px;font-weight:800;cursor:pointer;background:#fff;color:#172554;box-shadow:0 5px 0 #94a3b8;text-align:left}.answer button:hover,.mainbtn:hover{transform:translateY(-2px)}.answer button.correct{background:#86efac}.answer button.wrong{background:#fca5a5}.mainbtn{background:#facc15;color:#111827;text-align:center;margin-top:12px}.timer{font-size:30px;font-weight:1000;text-align:center;margin:8px 0 12px;padding:8px;border-radius:14px;background:#111827;color:#facc15}.timer.warning{background:#dc2626;animation:pulse .45s infinite alternate}.feedback{min-height:28px;font-weight:800;margin-top:10px}.hidden{display:none!important}
+.confetti{position:fixed;width:10px;height:18px;top:-30px;animation:fall 1.4s linear forwards;z-index:20}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}@keyframes pulse{to{transform:scale(1.08)}}@keyframes float{50%{transform:translateY(-7px) rotate(.5deg)}}
+@media(max-width:800px){.board{grid-template-columns:1fr}.dartwrap{min-height:350px}.targets{grid-template-columns:repeat(5,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="top"><div><h1>🎯 HIT THE TARGET</h1><div class="sub">Misi Tadika Cerdas • Ayat Susunan Biasa & Songsang</div></div><div class="pill" id="round">Soalan 0 / 30</div></div>
+<div class="board">
+<section class="card">
+<div class="scoreboard" id="teams"></div>
+<div class="dartwrap"><div class="dart"><div class="needle" id="needle"></div></div></div>
+<div class="targets" id="targets"></div>
+<button class="mainbtn" id="reset">↻ Mula Semula</button>
+</section>
+<section class="card">
+<div id="timer" class="timer">⏱️ 18</div><div id="questionArea"><div class="difficulty">Pilih sasaran</div><div class="q">Baling bola ke papan darts, kemudian pilih nilai markah untuk membuka Sampul Rahsia.</div></div>
+<div id="answers" class="answer"></div>
+<div id="feedback" class="feedback"></div>
+</section>
+</div>
+</div>
+<script>
+const questions = [
+["Mudah","Apakah jenis susunan bagi ayat “Puan Lisa menguruskan Tadika Cerdas”?","Ayat susunan biasa","Ayat susunan songsang","Ayat majmuk","Ayat perintah"],
+["Mudah","Dalam ayat “Murid-murid Tadika Cerdas bermain di taman”, apakah yang hadir di hadapan?","Subjek","Predikat","Keterangan","Kata kerja"],
+["Mudah","Apakah jenis ayat bagi “Murid Tadika Cerdas semakin bertambah”?","Ayat susunan biasa","Ayat susunan songsang","Ayat tanya","Ayat perintah"],
+["Mudah","Dalam ayat “Di Tadika Cerdas, Puan Lisa mengajar murid-murid”, bahagian manakah hadir di hadapan?","Predikat","Subjek","Objek","Kata nama"],
+["Mudah","Apakah jenis susunan bagi “Di Tadika Cerdas, Puan Lisa mengajar murid-murid”?","Ayat susunan songsang","Ayat susunan biasa","Ayat majmuk","Ayat aktif"],
+["Mudah","Apakah bahagian yang hadir dahulu dalam ayat susunan biasa?","Subjek","Predikat","Objek","Keterangan"],
+["Mudah","Apakah bahagian yang hadir dahulu dalam ayat susunan songsang?","Predikat","Subjek","Objek","Kata kerja"],
+["Mudah","Apakah jenis ayat bagi “Murid-murid Tadika Cerdas bermain di taman”?","Ayat susunan biasa","Ayat susunan songsang","Ayat tanya","Ayat seruan"],
+["Mudah","Apakah jenis ayat bagi “Di taman, murid-murid Tadika Cerdas bermain”?","Ayat susunan songsang","Ayat susunan biasa","Ayat perintah","Ayat majmuk"],
+["Mudah","Mengapakah “Di taman, murid-murid bermain” ialah ayat susunan songsang?","Predikat hadir sebelum subjek","Subjek hadir sebelum predikat","Ayat mempunyai kata kerja","Ayat mempunyai keterangan tempat"],
+["Sederhana","Apakah perbezaan susunan antara “Puan Lisa menguruskan Tadika Cerdas” dan “Di Tadika Cerdas, Puan Lisa mengajar murid-murid”?","Ayat pertama subjek diikuti predikat, ayat kedua predikat diikuti subjek","Kedua-duanya mempunyai susunan yang sama","Ayat pertama predikat diikuti subjek, ayat kedua subjek diikuti predikat","Kedua-duanya ialah ayat susunan songsang"],
+["Sederhana","Tukarkan “Murid-murid Tadika Cerdas bermain di taman” kepada susunan songsang.","Di taman, murid-murid Tadika Cerdas bermain.","Murid-murid bermain di taman Tadika Cerdas.","Bermain murid-murid Tadika Cerdas di taman.","Di taman bermain Tadika Cerdas murid-murid."],
+["Sederhana","Tukarkan “Di dalam kelas, guru mengajar murid-murid” kepada susunan biasa.","Guru mengajar murid-murid di dalam kelas.","Di dalam kelas guru mengajar murid-murid.","Murid-murid mengajar guru di dalam kelas.","Guru di dalam kelas mengajar murid-murid."],
+["Sederhana","Tukarkan “Puan Lisa mengembangkan perniagaan tadikanya dengan usaha yang gigih” kepada susunan songsang.","Dengan usaha yang gigih, Puan Lisa mengembangkan perniagaan tadikanya.","Puan Lisa dengan usaha yang gigih mengembangkan perniagaan tadikanya.","Mengembangkan perniagaan tadikanya Puan Lisa dengan usaha yang gigih.","Puan Lisa mengembangkan dengan usaha yang gigih perniagaan tadikanya."],
+["Sederhana","Apakah jenis ayat “Dengan penuh kesungguhan, Puan Lisa menguruskan Tadika Cerdas”?","Ayat susunan songsang","Ayat susunan biasa","Ayat tanya","Ayat perintah"],
+["Sederhana","Apakah bahagian yang didahulukan dalam “Untuk mengembangkan Tadika Cerdas, Puan Lisa menggunakan keuntungan perniagaan”?","Predikat","Subjek","Objek","Kata kerja"],
+["Sederhana","Apakah jenis ayat “Di kawasan perumahan itu, sebuah tadika baharu telah dibuka oleh seorang usahawan”?","Ayat susunan songsang","Ayat susunan biasa","Ayat tunggal biasa","Ayat perintah"],
+["Sederhana","Pilih ayat susunan biasa yang betul.","Seorang usahawan telah membuka sebuah tadika baharu di kawasan perumahan itu.","Di kawasan perumahan itu, telah membuka seorang usahawan sebuah tadika baharu.","Sebuah tadika baharu di kawasan perumahan itu telah seorang usahawan buka.","Di kawasan perumahan itu sebuah tadika baharu seorang usahawan membuka."],
+["Sederhana","Pilih ayat susunan songsang yang betul bagi “Guru mengajar murid-murid di dalam kelas”.","Di dalam kelas, guru mengajar murid-murid.","Guru di dalam kelas mengajar murid-murid.","Murid-murid di dalam kelas mengajar guru.","Mengajar murid-murid guru di dalam kelas."],
+["Sederhana","Apakah jenis ayat “Selepas beberapa tahun, Tadika Cerdas berkembang dengan pesat”?","Ayat susunan biasa","Ayat susunan songsang","Ayat tanya","Ayat perintah"],
+["Sederhana","Pilih ayat yang mempunyai susunan predikat + subjek.","Di taman, murid-murid Tadika Cerdas bermain.","Murid-murid Tadika Cerdas bermain di taman.","Puan Lisa menguruskan Tadika Cerdas.","Guru mengajar murid-murid di dalam kelas."],
+["Sederhana","Apakah perubahan utama apabila ayat biasa ditukarkan kepada ayat songsang?","Kedudukan subjek dan predikat berubah.","Maksud ayat mesti berubah.","Semua perkataan perlu dibuang.","Kata kerja mesti ditukar kepada kata nama."],
+["Sederhana","Pilih pasangan yang menunjukkan susunan biasa dan songsang dengan tepat.","Puan Lisa menguruskan Tadika Cerdas. / Di Tadika Cerdas, Puan Lisa menguruskan murid.","Di Tadika Cerdas, Puan Lisa menguruskan murid. / Puan Lisa menguruskan Tadika Cerdas.","Di taman, murid-murid bermain. / Di kelas, guru mengajar.","Murid bermain di taman. / Guru mengajar murid."],
+["Sederhana","Tukarkan “Guru mengajar murid-murid di dalam kelas” kepada susunan songsang.","Di dalam kelas, guru mengajar murid-murid.","Guru di dalam kelas mengajar murid-murid.","Murid-murid di dalam kelas mengajar guru.","Mengajar murid-murid di dalam kelas guru."],
+["Sederhana","Apakah sebab ayat “Di dalam kelas, guru mengajar murid-murid” ialah songsang?","Predikat didahulukan sebelum subjek.","Subjek didahulukan sebelum predikat.","Tiada subjek dalam ayat.","Ayat itu mempunyai kata kerja."],
+["Sederhana","Bina ayat susunan biasa berdasarkan situasi murid Tadika Cerdas sedang membaca buku.","Murid Tadika Cerdas membaca buku.","Di Tadika Cerdas, murid membaca buku.","Membaca buku murid Tadika Cerdas.","Buku dibaca murid Tadika Cerdas."],
+["Sukar","Bina ayat susunan songsang berdasarkan situasi Puan Lisa sedang berbincang dengan guru-guru tentang perkembangan Tadika Cerdas.","Tentang perkembangan Tadika Cerdas, Puan Lisa sedang berbincang dengan guru-guru.","Puan Lisa tentang perkembangan Tadika Cerdas sedang berbincang.","Guru-guru berbincang dengan Puan Lisa tentang perkembangan Tadika Cerdas.","Puan Lisa sedang berbincang tentang perkembangan Tadika Cerdas."],
+["Sukar","Tukarkan “Di kawasan perumahan itu, sebuah tadika baharu telah dibuka oleh seorang usahawan” kepada susunan biasa.","Seorang usahawan telah membuka sebuah tadika baharu di kawasan perumahan itu.","Sebuah tadika baharu telah membuka seorang usahawan di kawasan perumahan itu.","Seorang usahawan di kawasan perumahan itu telah dibuka sebuah tadika baharu.","Di kawasan perumahan itu seorang usahawan telah membuka."],
+["Sukar","Apakah perbezaan susunan antara A: “Puan Lisa menggunakan keuntungan perniagaan untuk mengembangkan Tadika Cerdas” dan B: “Untuk mengembangkan Tadika Cerdas, Puan Lisa menggunakan keuntungan perniagaan”?","A ialah susunan biasa, B ialah susunan songsang.","A ialah susunan songsang, B ialah susunan biasa.","Kedua-duanya susunan biasa.","Kedua-duanya susunan songsang."],
+["Sukar","Pilih ayat susunan songsang yang paling tepat berdasarkan konteks Puan Lisa mengembangkan perniagaan tadikanya dengan usaha yang gigih.","Dengan usaha yang gigih, Puan Lisa mengembangkan perniagaan tadikanya.","Puan Lisa mengembangkan perniagaan tadikanya dengan usaha yang gigih.","Puan Lisa dengan usaha yang gigih mengembangkan perniagaan tadikanya.","Mengembangkan perniagaan tadikanya dengan usaha yang gigih Puan Lisa."]
+];
+const scores=[10,20,30,40,50,60,70,80,90,100];
+let qIndex=0, usedByScore=Object.fromEntries(scores.map(s=>[s,0])), currentScore=null, currentQ=null, timerId=null, timeLeft=10;
+const teams=document.getElementById("teams"), targets=document.getElementById("targets"), questionArea=document.getElementById("questionArea"), answers=document.getElementById("answers"), feedback=document.getElementById("feedback"), round=document.getElementById("round"), needle=document.getElementById("needle"), timer=document.getElementById("timer");
+let teamScores=[0,0,0,0,0,0], currentTeam=0;
+function beep(freq=600,dur=.12,type="sine"){try{const c=new AudioContext(),o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=freq;g.gain.value=.04;o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur)}catch(e){}}
+function renderTeams(){teams.innerHTML=teamScores.map((s,i)=>`<div class="team"><b>Kumpulan ${i+1}</b><span>${s} ⭐</span></div>`).join("")}
+function confetti(){for(let i=0;i<35;i++){let x=document.createElement("i");x.className="confetti";x.style.left=Math.random()*100+"vw";x.style.background=`hsl(${Math.random()*360},90%,60%)`;x.style.animationDelay=Math.random()*.4+"s";document.body.appendChild(x);setTimeout(()=>x.remove(),1800)}}
+
+function stopTimer(){if(timerId){clearInterval(timerId);timerId=null}}
+function startTimer(){
+  stopTimer(); timeLeft=18; timer.textContent="⏱️ 18"; timer.classList.remove("warning");
+  timerId=setInterval(()=>{
+    timeLeft--; timer.textContent=`⏱️ ${timeLeft}`;
+    if(timeLeft<=3){timer.classList.add("warning"); beep(950,.07,"square")}
+    if(timeLeft<=0){
+      stopTimer();
+      [...answers.children].forEach(b=>b.disabled=true);
+      feedback.textContent="⏰ Masa tamat! Tiada markah untuk soalan ini.";
+      beep(150,.3,"sawtooth");
+      currentTeam=(currentTeam+1)%6;
+    }
+  },1000);
+}
+
+function chooseScore(score){currentScore=score; let idx=usedByScore[score]++; currentQ=(scores.indexOf(score)*3+idx); if(currentQ>=questions.length){currentQ=questions.length-1} needle.style.transform=`translate(-50%,-100%) rotate(${(score/100)*330-165}deg)`; document.querySelectorAll(".target").forEach(b=>b.classList.toggle("active",+b.dataset.score===score)); showQuestion(); beep(850,.14,"triangle")}
+let displayedOptions = [];
+let correctDisplayedIndex = 0;
+
+function shuffleArray(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+function showQuestion(){
+  let q=questions[currentQ];
+  let d=q[0], stem=q[1], opts=q.slice(2);
+
+  // Kedudukan jawapan betul dibuat BERIMBANG, bukan bergantung pada rawak.
+  // Soalan 1=A, 2=B, 3=C, 4=D, kemudian ulang semula.
+  const correctPosition = currentQ % 4;
+
+  displayedOptions = opts.map((text,index)=>({text,index}));
+  const shuffledWrong = shuffleArray(displayedOptions.filter(x=>x.index!==0));
+
+  let result = [];
+  let wrongIndex = 0;
+  for(let i=0;i<4;i++){
+    if(i===correctPosition){
+      result.push({text:opts[0],index:0});
+    }else{
+      result.push(shuffledWrong[wrongIndex++]);
+    }
+  }
+
+  displayedOptions = result;
+  correctDisplayedIndex = correctPosition;
+
+  questionArea.innerHTML=`<div class="difficulty">${d} • ${currentScore} MARKAH</div><div class="q">${stem}</div>`;
+  answers.innerHTML=displayedOptions.map((o,i)=>`<button onclick="answer(${i})">${String.fromCharCode(65+i)}. ${o.text}</button>`).join("");
+  feedback.textContent="";
+  round.textContent=`Soalan ${currentQ+1} / 30 • Kumpulan ${currentTeam+1}`;
+  startTimer();
+}
+
+function answer(i){
+  stopTimer();
+  let btns=[...answers.children];
+  btns.forEach(b=>b.disabled=true);
+
+  const correct=correctDisplayedIndex;
+
+  if(i===correct){
+    btns[i].classList.add("correct");
+    teamScores[currentTeam]+=currentScore;
+    feedback.textContent=`🎉 Betul! Kumpulan ${currentTeam+1} mendapat ${currentScore} markah.`;
+    confetti();
+    beep(900,.12);
+    setTimeout(()=>beep(1200,.18),130);
+  }else{
+    btns[i].classList.add("wrong");
+    btns[correct].classList.add("correct");
+    feedback.textContent=`💡 Jawapan yang tepat: ${String.fromCharCode(65+correct)}. ${displayedOptions[correct].text}`;
+    beep(180,.25,"sawtooth");
+  }
+  renderTeams();
+  currentTeam=(currentTeam+1)%6;
+}
+scores.forEach(s=>{let b=document.createElement("button");b.className="target";b.dataset.score=s;b.textContent=s;b.onclick=()=>chooseScore(s);targets.appendChild(b)});
+renderTeams();
+document.getElementById("reset").onclick=()=>{stopTimer();timer.textContent="⏱️ 18";timer.classList.remove("warning");qIndex=0;usedByScore=Object.fromEntries(scores.map(s=>[s,0]));teamScores=[0,0,0,0,0,0];currentTeam=0;currentScore=null;currentQ=null;needle.style.transform="translate(-50%,-100%) rotate(0deg)";questionArea.innerHTML='<div class="difficulty">Pilih sasaran</div><div class="q">Baling bola ke papan darts, kemudian pilih nilai markah untuk membuka Sampul Rahsia.</div>';answers.innerHTML="";feedback.textContent="";document.querySelectorAll(".target").forEach(b=>b.classList.remove("active"));renderTeams();beep(500,.12)};
+</script>
+</body></html>
